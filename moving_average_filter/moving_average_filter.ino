@@ -1,6 +1,8 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
+#include <HardwareSerial.h>
+#include <SoftwareSerial.h>
 
 Adafruit_MPU6050 mpu;
 
@@ -21,7 +23,7 @@ void setup()
   // Serial.println("MPU6050 Found!");
 
   // set accelerometer range to +-8G
-  mpu.setAccelerometerRangeMPU6050_RANGE_8_G);
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
 
   // set gyro range to +- 500 deg/s
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
@@ -33,50 +35,56 @@ void setup()
 }
 
 double a_avg_x = 0;
-double a_treadmill_x[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-double avg_treadmill_x[5] = {0, 0, 0, 0, 0};
+double a_treadmill_x[10] = {0};
+double avg_treadmill_x[5] = {0};
 double a_avg2_x = 0;
 
 double a_avg_y = 0;
-double a_treadmill_y[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+double a_treadmill_y[10] = {0};
 
 void loop()
 {
   /* Get new sensor events with the readings */
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
+  sensors_event_t accel, gyro, temp;
+  mpu.getEvent(&accel, &gyro, &temp);
+
+  sensors_event_t a;
+
+  // Set acceleration values
+  float accel_x = accel.acceleration.v[0]; // has the x value
+  float accel_y = accel.acceleration.v[1]; // has the y value
 
   // Setting bounds on X-acceleration
 
-  if (a.acceleration.x > 2G)
+  if (accel_x > 2)
   {
-    a.acceleration.x = 2G;
+    accel_x = 2;
   }
 
-  if (a.acceleration.x < -2G)
+  if (accel_x < -2)
   {
-    a.acceleration.x = -2G;
+    accel_x = -2;
   }
 
   // Setting bounds on Y-acceleration
 
-  if (a.acceleration.y > 2G)
+  if (accel_y > 2)
   {
-    a.acceleration.y = 2G;
+    accel_y = 2;
   }
 
-  if (a.acceleration.y < -2G)
+  if (accel_y < -2)
   {
-    a.acceleration.y = -2G;
+    accel_y = -2;
   }
 
   /* Print out the values */
   // Serial.print("Acceleration X: ");
-  Serial.print(a.acceleration.x);
+  Serial.print(accel_x);
   Serial.print('\t');
 
   // Serial.print("Acceleration Y: ");
-  Serial.print(a.acceleration.y);
+  Serial.print(accel_y);
   Serial.print('\t');
 
   // for loop in the x-axis, average of 10 accel-x values
@@ -84,7 +92,7 @@ void loop()
   {
     a_treadmill_x[i] = a_treadmill_x[i + 1];
   }
-  a_treadmill_x[9] = a.acceleration.x;
+  a_treadmill_x[9] = accel_x;
 
   for (int i = 0; i <= 9; i++)
   {
@@ -113,7 +121,7 @@ void loop()
   {
     a_treadmill_y[i] = a_treadmill_y[i + 1];
   }
-  a_treadmill_y[9] = a.acceleration.y;
+  a_treadmill_y[9] = accel_y;
 
   for (int i = 0; i <= 9; i++)
   {
